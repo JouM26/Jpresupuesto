@@ -11,6 +11,7 @@ on:
 jobs:
   build-windows:
     runs-on: windows-latest
+    timeout-minutes: 45
     defaults:
       run:
         shell: pwsh
@@ -40,7 +41,7 @@ jobs:
 
       - name: Build executable (PyInstaller)
         run: |
-          python -m PyInstaller --noconfirm --clean --windowed --name JPresupuesto --collect-data kivy --collect-binaries kivy --collect-data kivymd --collect-binaries kivymd --hidden-import kivy_deps.angle --hidden-import kivy_deps.glew --hidden-import kivy_deps.sdl2 app.py *>&1 | Tee-Object -FilePath pyinstaller.log
+          python -m PyInstaller --noconfirm --clean --windowed --name JPresupuesto --hidden-import kivy_deps.angle --hidden-import kivy_deps.glew --hidden-import kivy_deps.sdl2 --hidden-import kivymd --exclude-module kivy.tests app.py *>&1 | Tee-Object -FilePath pyinstaller.log
           if ($LASTEXITCODE -ne 0) {
             Write-Error "PyInstaller fallo. Revisa pyinstaller.log en artifacts."
             exit $LASTEXITCODE
@@ -64,7 +65,7 @@ jobs:
           name: build-logs-windows
           path: |
             pyinstaller.log
-            build/**
+          if-no-files-found: ignore
 
       - name: Upload artifact
         uses: actions/upload-artifact@v4

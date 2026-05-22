@@ -47,5 +47,5 @@ python app.py
 
 ```bash
 pip install -r requirements-build.txt
-python -m PyInstaller --noconfirm --clean --windowed --name JPresupuesto --collect-data kivy --collect-binaries kivy --collect-data kivymd --collect-binaries kivymd --hidden-import kivy_deps.angle --hidden-import kivy_deps.glew --hidden-import kivy_deps.sdl2 app.py
+python -m PyInstaller --noconfirm --clean --windowed --name JPresupuesto --hidden-import kivy_deps.angle --hidden-import kivy_deps.glew --hidden-import kivy_deps.sdl2 --hidden-import kivymd --exclude-module kivy.tests app.py
 ```
