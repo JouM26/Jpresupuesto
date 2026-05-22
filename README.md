@@ -36,6 +36,8 @@ El zip contiene la app compilada en:
 2. Descarga el artefacto `build-logs-windows`.
 3. Revisa `pyinstaller.log` para ver el error exacto de compilación.
 
+Nota: en GitHub Actions se fuerza `KIVY_WINDOW=mock` y `KIVY_GL_BACKEND=mock` porque el runner no tiene OpenGL real; esto afecta solo al build, no al uso normal de la app instalada.
+
 ## Ejecutar localmente (desarrollo)
 
 ```bash

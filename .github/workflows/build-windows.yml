@@ -12,6 +12,12 @@ jobs:
   build-windows:
     runs-on: windows-latest
     timeout-minutes: 45
+    env:
+      KIVY_NO_ARGS: "1"
+      KIVY_WINDOW: "mock"
+      KIVY_GL_BACKEND: "mock"
+      KIVY_AUDIO: "mock"
+      KIVY_NO_CONSOLELOG: "1"
     defaults:
       run:
         shell: pwsh
@@ -35,6 +41,8 @@ jobs:
           python --version
           pip --version
           python -m PyInstaller --version
+          echo "KIVY_WINDOW=$env:KIVY_WINDOW"
+          echo "KIVY_GL_BACKEND=$env:KIVY_GL_BACKEND"
           pip show kivy
           pip show kivymd
           pip show reportlab
