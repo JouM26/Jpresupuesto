@@ -42,3 +42,10 @@ El zip contiene la app compilada en:
 pip install -r requirements.txt
 python app.py
 ```
+
+## Build manual recomendado (Windows)
+
+```bash
+pip install -r requirements-build.txt
+python -m PyInstaller --noconfirm --clean --windowed --name JPresupuesto --collect-data kivy --collect-binaries kivy --collect-data kivymd --collect-binaries kivymd --hidden-import kivy_deps.angle --hidden-import kivy_deps.glew --hidden-import kivy_deps.sdl2 app.py
+```
