@@ -30,6 +30,12 @@ Si creas un release en GitHub, el workflow tambien se ejecuta y adjunta:
 El zip contiene la app compilada en:
 - `dist/JPresupuesto/`
 
+### Si falla el workflow
+
+1. Abre la corrida en `Actions`.
+2. Descarga el artefacto `build-logs-windows`.
+3. Revisa `pyinstaller.log` para ver el error exacto de compilación.
+
 ## Ejecutar localmente (desarrollo)
 
 ```bash

@@ -11,6 +11,9 @@ on:
 jobs:
   build-windows:
     runs-on: windows-latest
+    defaults:
+      run:
+        shell: pwsh
 
     steps:
       - name: Checkout
@@ -26,14 +29,42 @@ jobs:
           python -m pip install --upgrade pip
           pip install -r requirements-build.txt
 
+      - name: Environment diagnostics
+        run: |
+          python --version
+          pip --version
+          python -m PyInstaller --version
+          pip show kivy
+          pip show kivymd
+          pip show reportlab
+
       - name: Build executable (PyInstaller)
         run: |
-          pyinstaller --noconfirm --clean --windowed --name JPresupuesto --collect-all kivymd --collect-submodules kivy --hidden-import kivy_deps.angle --hidden-import kivy_deps.glew --hidden-import kivy_deps.sdl2 app.py
+          python -m PyInstaller --noconfirm --clean --windowed --name JPresupuesto --collect-all kivy --collect-all kivymd --hidden-import kivy_deps.angle --hidden-import kivy_deps.glew --hidden-import kivy_deps.sdl2 app.py *>&1 | Tee-Object -FilePath pyinstaller.log
+          if ($LASTEXITCODE -ne 0) {
+            Write-Error "PyInstaller fallo. Revisa pyinstaller.log en artifacts."
+            exit $LASTEXITCODE
+          }
+
+      - name: Validate build output
+        run: |
+          if (!(Test-Path "dist/JPresupuesto")) {
+            Write-Error "No existe dist/JPresupuesto luego del build."
+            exit 1
+          }
 
       - name: Package build output
-        shell: pwsh
         run: |
           Compress-Archive -Path dist/JPresupuesto/* -DestinationPath dist/JPresupuesto-windows.zip -Force
+
+      - name: Upload build logs
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: build-logs-windows
+          path: |
+            pyinstaller.log
+            build/**
 
       - name: Upload artifact
         uses: actions/upload-artifact@v4
