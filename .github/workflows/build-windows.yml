@@ -1,0 +1,48 @@
+name: Build Windows App
+
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - main
+  release:
+    types: [created]
+
+jobs:
+  build-windows:
+    runs-on: windows-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements-build.txt
+
+      - name: Build executable (PyInstaller)
+        run: |
+          pyinstaller --noconfirm --clean --windowed --name JPresupuesto --collect-all kivymd --collect-submodules kivy --hidden-import kivy_deps.angle --hidden-import kivy_deps.glew --hidden-import kivy_deps.sdl2 app.py
+
+      - name: Package build output
+        shell: pwsh
+        run: |
+          Compress-Archive -Path dist/JPresupuesto/* -DestinationPath dist/JPresupuesto-windows.zip -Force
+
+      - name: Upload artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: JPresupuesto-windows
+          path: dist/JPresupuesto-windows.zip
+
+      - name: Upload release asset
+        if: github.event_name == 'release'
+        uses: softprops/action-gh-release@v2
+        with:
+          files: dist/JPresupuesto-windows.zip
