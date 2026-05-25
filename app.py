@@ -20,11 +20,12 @@ from kivymd.uix.button import MDRaisedButton as MDMiniButton
 from kivymd.uix.card import MDCard
 from kivymd.uix.label import MDLabel
 from kivymd.uix.snackbar import Snackbar
-from reportlab.lib import colors
-from reportlab.lib.pagesizes import letter
-from reportlab.lib.styles import ParagraphStyle, getSampleStyleSheet
-from reportlab.lib.units import inch
-from reportlab.platypus import Image, Paragraph, SimpleDocTemplate, Spacer, Table, TableStyle
+
+try:
+    from fpdf import FPDF
+    FPDF_AVAILABLE = True
+except Exception:
+    FPDF_AVAILABLE = False
 
 # --- INTERFAZ DE USUARIO (LENGUAJE KV) ---
 KV = '''
@@ -1211,37 +1212,49 @@ class PresupuestoApp(MDApp):
 
     def exportar_historial_pdf(self):
         """Exporta un reporte PDF del historial filtrado."""
+        if not FPDF_AVAILABLE:
+            self.mostrar_mensaje("Exportar PDF no disponible en esta compilacion")
+            return
+
         registros = self.obtener_todos(self.filtro_actual)
         if not registros:
             self.mostrar_mensaje("No hay datos para exportar")
             return
 
         ruta_pdf = self.obtener_ruta_unica("Historial_Cotizaciones", ".pdf")
-        doc = SimpleDocTemplate(ruta_pdf, pagesize=letter, rightMargin=30, leftMargin=30, topMargin=30, bottomMargin=30)
-        styles = getSampleStyleSheet()
-        story = [Paragraph("REPORTE DE HISTORIAL DE COTIZACIONES", styles["Heading2"]), Spacer(1, 10)]
-
-        data = [["Numero", "Cliente", "Monto", "Fecha"]]
-        for row in registros:
-            data.append([
-                row["numero"],
-                row["cliente"],
-                self.formatear_monto(row["total"] if row["total"] else row["costo"], row["moneda"]),
-                row["fecha_creacion"] or "",
-            ])
-
-        tabla = Table(data, colWidths=[90, 160, 110, 130])
-        tabla.setStyle(TableStyle([
-            ("BACKGROUND", (0, 0), (-1, 0), colors.HexColor("#1F618D")),
-            ("TEXTCOLOR", (0, 0), (-1, 0), colors.whitesmoke),
-            ("FONTNAME", (0, 0), (-1, 0), "Helvetica-Bold"),
-            ("GRID", (0, 0), (-1, -1), 0.4, colors.HexColor("#D5D8DC")),
-            ("BACKGROUND", (0, 1), (-1, -1), colors.HexColor("#FAFAFA")),
-        ]))
-        story.append(tabla)
-
         try:
-            doc.build(story)
+            pdf = FPDF()
+            pdf.set_auto_page_break(auto=True, margin=12)
+            pdf.add_page()
+            pdf.set_font("Helvetica", "B", 14)
+            pdf.cell(0, 10, self._safe_pdf_text("REPORTE DE HISTORIAL DE COTIZACIONES"), ln=1)
+            pdf.ln(2)
+
+            # Encabezado de tabla
+            headers = ["Numero", "Cliente", "Monto", "Fecha"]
+            widths = [38, 72, 40, 40]
+            pdf.set_font("Helvetica", "B", 10)
+            for i, head in enumerate(headers):
+                pdf.cell(widths[i], 8, self._safe_pdf_text(head), border=1, align="L")
+            pdf.ln()
+
+            pdf.set_font("Helvetica", "", 9)
+            for row in registros:
+                monto = self.formatear_monto(row["total"] if row["total"] else row["costo"], row["moneda"])
+                fila = [
+                    str(row["numero"] or ""),
+                    str(row["cliente"] or ""),
+                    str(monto),
+                    str(row["fecha_creacion"] or ""),
+                ]
+                for i, col in enumerate(fila):
+                    texto = self._safe_pdf_text(col)
+                    if len(texto) > 28 and i == 1:
+                        texto = texto[:28] + "..."
+                    pdf.cell(widths[i], 7, texto, border=1, align="L")
+                pdf.ln()
+
+            pdf.output(ruta_pdf)
             self.mostrar_mensaje("PDF de historial exportado")
             self.abrir_pdf(ruta_pdf)
         except Exception as e:
@@ -1356,7 +1369,11 @@ class PresupuestoApp(MDApp):
         return items
 
     def exportar_a_pdf(self, payload, nombre_archivo_personalizado=None):
-        """Construye el archivo PDF estructurado con ReportLab."""
+        """Construye el archivo PDF estructurado con fpdf2."""
+        if not FPDF_AVAILABLE:
+            self.mostrar_mensaje("Generacion PDF no disponible en esta compilacion")
+            return None
+
         if nombre_archivo_personalizado:
             base_nombre = self.sanitizar_nombre_archivo(nombre_archivo_personalizado)
         else:
@@ -1364,109 +1381,101 @@ class PresupuestoApp(MDApp):
 
         ruta_pdf = self.obtener_ruta_unica(base_nombre, ".pdf")
 
-        doc = SimpleDocTemplate(ruta_pdf, pagesize=letter, rightMargin=40, leftMargin=40, topMargin=40, bottomMargin=40)
-        story = []
-        styles = getSampleStyleSheet()
-
-        # Estilo de título personalizado
-        title_style = ParagraphStyle(
-            'TituloColor',
-            parent=styles['Heading1'],
-            fontSize=22,
-            leading=26,
-            textColor=colors.HexColor("#1F618D"),
-            spaceAfter=15
-        )
-
-        if self.empresa_logo_path and os.path.isfile(self.empresa_logo_path):
-            try:
-                logo = Image(self.empresa_logo_path)
-                max_width = 1.6 * inch
-                if logo.imageWidth and logo.imageHeight:
-                    ratio = logo.imageHeight / float(logo.imageWidth)
-                    logo.drawWidth = max_width
-                    logo.drawHeight = max_width * ratio
-                story.append(logo)
-                story.append(Spacer(1, 8))
-            except Exception:
-                self.mostrar_mensaje("No se pudo cargar el logo para el PDF")
-
-        story.append(Paragraph("DOCUMENTO DE COTIZACIÓN", title_style))
-        story.append(Paragraph(f"<b>Proveedor:</b> {self.empresa_nombre} | {self.empresa_rut}", styles["Normal"]))
-        story.append(Paragraph(f"<b>Contacto:</b> {self.empresa_contacto}", styles["Normal"]))
-        if self.empresa_direccion:
-            story.append(Paragraph(f"<b>Direccion Empresa:</b> {self.empresa_direccion}", styles["Normal"]))
-        story.append(Spacer(1, 8))
-        story.append(Paragraph(f"<b>Número:</b> {payload['numero']}", styles["Normal"]))
-        story.append(Paragraph(f"<b>Fecha documento:</b> {payload.get('fecha_documento', payload['fecha_creacion'])}", styles["Normal"]))
-        story.append(Paragraph(f"<b>Fecha emisión:</b> {payload['fecha_creacion']}", styles["Normal"]))
-        story.append(Paragraph(f"<b>Válido hasta:</b> {payload['fecha_vencimiento']}", styles["Normal"]))
-        story.append(Paragraph(f"<b>Cliente:</b> {payload['cliente']}", styles["Normal"]))
-        story.append(Paragraph(f"<b>RUT:</b> {payload.get('cliente_rut', '')}", styles["Normal"]))
-        story.append(Paragraph(f"<b>Correo:</b> {payload.get('cliente_correo', '')}", styles["Normal"]))
-        story.append(Paragraph(f"<b>Celular:</b> {payload.get('cliente_celular', '')}", styles["Normal"]))
-        story.append(Paragraph(f"<b>Direccion:</b> {payload.get('cliente_direccion', '')}", styles["Normal"]))
-        story.append(Spacer(1, 14))
-
-        items = self.construir_items_para_pdf(payload)
-        datos_tabla = [["Item", "Descripcion", "Cant.", "P. Unitario", "P. Total"]]
-        neto = 0
-        for item_nombre, descripcion, cantidad, unitario, subtotal in items:
-            neto += subtotal
-            datos_tabla.append([
-                Paragraph(item_nombre, styles["Normal"]),
-                Paragraph(descripcion, styles["Normal"]),
-                f"{cantidad:g}",
-                self.formatear_monto(unitario, payload["moneda"]),
-                self.formatear_monto(subtotal, payload["moneda"]),
-            ])
-
-        iva = neto * 0.19
-        total = neto + iva
-        datos_tabla.append(["", "", "", Paragraph("<b>VALOR NETO</b>", styles["Normal"]), Paragraph(f"<b>{self.formatear_monto(neto, payload['moneda'])}</b>", styles["Normal"])])
-        datos_tabla.append(["", "", "", Paragraph("<b>IVA 19%</b>", styles["Normal"]), Paragraph(f"<b>{self.formatear_monto(iva, payload['moneda'])}</b>", styles["Normal"])])
-        datos_tabla.append([
-            "",
-            "",
-            "",
-            Paragraph("<b>VALOR TOTAL</b>", styles["Normal"]),
-            Paragraph(f"<b>{self.formatear_monto(total, payload['moneda'])}</b>", styles["Normal"]),
-        ])
-
-        tabla = Table(datos_tabla, colWidths=[70, 190, 45, 80, 115])
-        tabla.setStyle(TableStyle([
-            ('BACKGROUND', (0, 0), (-1, 0), colors.HexColor("#1F618D")),
-            ('TEXTCOLOR', (0, 0), (-1, 0), colors.whitesmoke),
-            ('ALIGN', (0, 0), (-1, 0), 'LEFT'),
-            ('ALIGN', (2, 1), (-1, -1), 'RIGHT'),
-            ('FONTNAME', (0, 0), (-1, 0), 'Helvetica-Bold'),
-            ('BOTTOMPADDING', (0, 0), (-1, 0), 10),
-            ('TOPPADDING', (0, 0), (-1, 0), 10),
-            ('BACKGROUND', (0, 1), (-1, -4), colors.HexColor("#F9F9F9")),
-            ('GRID', (0, 0), (-1, -1), 0.5, colors.HexColor("#D5D8DC")),
-            ('VALIGN', (0, 0), (-1, -1), 'TOP'),
-            ('BOTTOMPADDING', (0, 1), (-1, -1), 12),
-            ('BACKGROUND', (0, -3), (-1, -1), colors.HexColor("#EAF2F8")),
-            ('FONTNAME', (0, -3), (-1, -1), 'Helvetica-Bold'),
-        ]))
-        
-        story.append(tabla)
-        story.append(Spacer(1, 16))
-        if payload.get("notas"):
-            story.append(Paragraph(f"<b>Notas:</b> {payload['notas']}", styles["Normal"]))
-            story.append(Spacer(1, 8))
-        if payload.get("condiciones"):
-            story.append(Paragraph(f"<b>Condiciones comerciales:</b> {payload['condiciones']}", styles["Normal"]))
-            story.append(Spacer(1, 8))
-        story.append(Paragraph("<b>Firma / Aprobación:</b> __________________________", styles["Normal"]))
-
         try:
-            doc.build(story)
+            pdf = FPDF()
+            pdf.set_auto_page_break(auto=True, margin=12)
+            pdf.add_page()
+
+            if self.empresa_logo_path and os.path.isfile(self.empresa_logo_path):
+                try:
+                    pdf.image(self.empresa_logo_path, x=10, y=8, w=30)
+                    pdf.ln(24)
+                except Exception:
+                    self.mostrar_mensaje("No se pudo cargar el logo para el PDF")
+
+            pdf.set_font("Helvetica", "B", 16)
+            pdf.cell(0, 10, self._safe_pdf_text("DOCUMENTO DE COTIZACION"), ln=1)
+
+            pdf.set_font("Helvetica", "", 10)
+            encabezado = [
+                f"Proveedor: {self.empresa_nombre} | {self.empresa_rut}",
+                f"Contacto: {self.empresa_contacto}",
+                f"Direccion Empresa: {self.empresa_direccion}" if self.empresa_direccion else "",
+                f"Numero: {payload['numero']}",
+                f"Fecha documento: {payload.get('fecha_documento', payload['fecha_creacion'])}",
+                f"Fecha emision: {payload['fecha_creacion']}",
+                f"Valido hasta: {payload['fecha_vencimiento']}",
+                f"Cliente: {payload['cliente']}",
+                f"RUT: {payload.get('cliente_rut', '')}",
+                f"Correo: {payload.get('cliente_correo', '')}",
+                f"Celular: {payload.get('cliente_celular', '')}",
+                f"Direccion: {payload.get('cliente_direccion', '')}",
+            ]
+            for linea in encabezado:
+                if linea:
+                    pdf.multi_cell(0, 6, self._safe_pdf_text(linea))
+            pdf.ln(2)
+
+            # Tabla de items
+            items = self.construir_items_para_pdf(payload)
+            widths = [22, 72, 18, 38, 40]
+            headers = ["Item", "Descripcion", "Cant.", "P. Unitario", "P. Total"]
+
+            pdf.set_font("Helvetica", "B", 9)
+            for i, head in enumerate(headers):
+                pdf.cell(widths[i], 8, self._safe_pdf_text(head), border=1)
+            pdf.ln()
+
+            pdf.set_font("Helvetica", "", 8)
+            neto = 0
+            for item_nombre, descripcion, cantidad, unitario, subtotal in items:
+                neto += subtotal
+                row = [
+                    self._safe_pdf_text(str(item_nombre)[:14]),
+                    self._safe_pdf_text(str(descripcion)[:45]),
+                    self._safe_pdf_text(f"{cantidad:g}"),
+                    self._safe_pdf_text(self.formatear_monto(unitario, payload["moneda"])),
+                    self._safe_pdf_text(self.formatear_monto(subtotal, payload["moneda"])),
+                ]
+                for i, val in enumerate(row):
+                    align = "R" if i >= 2 else "L"
+                    pdf.cell(widths[i], 7, val, border=1, align=align)
+                pdf.ln()
+
+            iva = neto * 0.19
+            total = neto + iva
+            resumen = [
+                ("VALOR NETO", self.formatear_monto(neto, payload["moneda"])),
+                ("IVA 19%", self.formatear_monto(iva, payload["moneda"])),
+                ("VALOR TOTAL", self.formatear_monto(total, payload["moneda"])),
+            ]
+
+            pdf.ln(2)
+            pdf.set_font("Helvetica", "B", 10)
+            for titulo, valor in resumen:
+                pdf.cell(45, 8, self._safe_pdf_text(titulo), border=1)
+                pdf.cell(45, 8, self._safe_pdf_text(valor), border=1, ln=1, align="R")
+
+            pdf.ln(3)
+            pdf.set_font("Helvetica", "", 9)
+            if payload.get("notas"):
+                pdf.multi_cell(0, 6, self._safe_pdf_text(f"Notas: {payload['notas']}"))
+            if payload.get("condiciones"):
+                pdf.multi_cell(0, 6, self._safe_pdf_text(f"Condiciones comerciales: {payload['condiciones']}"))
+            pdf.ln(4)
+            pdf.cell(0, 7, self._safe_pdf_text("Firma / Aprobacion: __________________________"), ln=1)
+
+            pdf.output(ruta_pdf)
             self.mostrar_mensaje(f"PDF guardado: {os.path.basename(ruta_pdf)}")
             return ruta_pdf
         except Exception as e:
             self.mostrar_mensaje(f"Error al generar PDF: {e}")
             return None
+
+    def _safe_pdf_text(self, value):
+        """Convierte texto a latin-1 para mantener compatibilidad con fuentes base de fpdf2."""
+        texto = str(value or "")
+        return texto.encode("latin-1", "replace").decode("latin-1")
 
     def on_stop(self):
         """Cierra la conexión a la base de datos al salir de la aplicación."""

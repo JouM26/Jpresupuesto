@@ -13,7 +13,9 @@ Dependencias de build:
 - `requirements.txt`
 - `requirements-build.txt`
 
-Nota de estabilidad CI: requirements-build.txt fija pyinstaller-hooks-contrib en una versión alineada con PyInstaller para evitar errores de hooks en builds de Kivy/ReportLab.
+Nota de estabilidad CI: requirements-build.txt fija pyinstaller-hooks-contrib en una versión alineada con PyInstaller para evitar errores de hooks en builds de Kivy.
+
+Generacion de PDF: el proyecto usa fpdf2 (compatible con Android) para mantener la exportacion de cotizaciones e historial tambien en celular.
 
 Adicionalmente, el workflow usa un hook local en .github/pyinstaller_hooks/hook-kivy.py para evitar fallos del hook oficial de Kivy en runners de GitHub Actions.
 

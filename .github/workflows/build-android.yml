@@ -24,7 +24,12 @@ jobs:
         run: |
           echo "Workspace: $GITHUB_WORKSPACE"
           ls -la "$GITHUB_WORKSPACE"
-          test -f "$GITHUB_WORKSPACE/buildozer.spec"
+          if [[ ! -f "$GITHUB_WORKSPACE/buildozer.spec" ]]; then
+            echo "ERROR: buildozer.spec no existe en la raiz del repo."
+            exit 1
+          fi
+          echo "buildozer.spec encontrado."
+          head -n 40 "$GITHUB_WORKSPACE/buildozer.spec"
 
           docker run --rm \
             -v "$GITHUB_WORKSPACE":/home/user/hostcwd \
@@ -35,7 +40,10 @@ jobs:
       - name: Validate APK output
         run: |
           ls -la bin || true
-          test -n "$(ls -1 bin/*.apk 2>/dev/null)"
+          if [[ -z "$(ls -1 bin/*.apk 2>/dev/null)" ]]; then
+            echo "ERROR: No se genero ningun APK en bin/."
+            exit 1
+          fi
 
       - name: Upload APK artifact
         uses: actions/upload-artifact@v4
