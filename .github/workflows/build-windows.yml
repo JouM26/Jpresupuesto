@@ -18,6 +18,9 @@ jobs:
       KIVY_GL_BACKEND: "mock"
       KIVY_AUDIO: "mock"
       KIVY_NO_CONSOLELOG: "1"
+      KIVY_DOC: "1"
+      KIVY_UNITTEST: "1"
+      KIVY_DPI: "96"
       PYI_LOG_LEVEL: "INFO"
     defaults:
       run:
@@ -44,13 +47,16 @@ jobs:
           python -m PyInstaller --version
           echo "KIVY_WINDOW=$env:KIVY_WINDOW"
           echo "KIVY_GL_BACKEND=$env:KIVY_GL_BACKEND"
+          echo "KIVY_DOC=$env:KIVY_DOC"
+          echo "KIVY_UNITTEST=$env:KIVY_UNITTEST"
+          echo "KIVY_DPI=$env:KIVY_DPI"
           pip show kivy
           pip show kivymd
           pip show reportlab
 
       - name: Build executable (PyInstaller)
         run: |
-          python -m PyInstaller --noconfirm --clean --windowed --log-level INFO --name JPresupuesto --hidden-import kivy_deps.angle --hidden-import kivy_deps.glew --hidden-import kivy_deps.sdl2 --hidden-import kivymd --exclude-module kivy.tests app.py > pyinstaller.log 2>&1
+          python -m PyInstaller --noconfirm --clean --windowed --log-level INFO --name JPresupuesto --hidden-import kivy_deps.angle --hidden-import kivy_deps.glew --hidden-import kivy_deps.sdl2 --exclude-module kivy.tests app.py > pyinstaller.log 2>&1
           $exitCode = $LASTEXITCODE
           if ($exitCode -ne 0) {
             Write-Host "PyInstaller fallo. Ultimas lineas de pyinstaller.log:"
