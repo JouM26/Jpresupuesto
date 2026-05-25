@@ -53,9 +53,19 @@ jobs:
           python -m PyInstaller --noconfirm --clean --windowed --log-level INFO --name JPresupuesto --hidden-import kivy_deps.angle --hidden-import kivy_deps.glew --hidden-import kivy_deps.sdl2 --hidden-import kivymd --exclude-module kivy.tests app.py > pyinstaller.log 2>&1
           $exitCode = $LASTEXITCODE
           if ($exitCode -ne 0) {
-            Write-Error "PyInstaller fallo. Revisa pyinstaller.log en artifacts."
+            Write-Host "PyInstaller fallo. Ultimas lineas de pyinstaller.log:"
             Get-Content pyinstaller.log -Tail 200
             exit $exitCode
+          }
+
+      - name: Show build log tail (on failure)
+        if: failure()
+        run: |
+          if (Test-Path "pyinstaller.log") {
+            Write-Host "=== pyinstaller.log (ultimas 300 lineas) ==="
+            Get-Content pyinstaller.log -Tail 300
+          } else {
+            Write-Host "pyinstaller.log no existe en el workspace."
           }
 
       - name: Validate build output
