@@ -34,6 +34,24 @@ Si creas un release en GitHub, el workflow tambien se ejecuta y adjunta:
 El zip contiene la app compilada en:
 - `dist/JPresupuesto/`
 
+## Build de app para celular (Android APK)
+
+Este repositorio tambien incluye build automatico Android:
+- `.github/workflows/build-android.yml`
+- `buildozer.spec`
+
+### Como generar el APK
+
+1. Haz push a `main` o ejecuta manualmente el workflow `Build Android APK` en `Actions`.
+2. Al finalizar, descarga el artefacto:
+- `JPresupuesto-android-apk`
+3. Ese artefacto contiene el archivo `.apk` para instalar en Android.
+
+### Notas Android
+
+- El primer build Android puede tardar bastante (descarga SDK/NDK dentro del contenedor).
+- En Android, al generar PDF la app informa la ruta del archivo en lugar de abrirlo automaticamente.
+
 ### Si falla el workflow
 
 1. Abre la corrida en `Actions`.

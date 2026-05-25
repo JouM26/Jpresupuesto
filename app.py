@@ -9,6 +9,7 @@ from datetime import datetime, timedelta
 
 from kivy.lang import Builder
 from kivy.core.window import Window
+from kivy.utils import platform as kivy_platform
 from kivy.uix.filechooser import FileChooserListView
 from kivy.uix.boxlayout import BoxLayout as KivyBoxLayout
 from kivy.uix.button import Button
@@ -1254,6 +1255,15 @@ class PresupuestoApp(MDApp):
 
     def obtener_carpeta_descargas(self):
         """Devuelve la ruta de la carpeta Descargas del usuario."""
+        if kivy_platform == "android":
+            try:
+                android_storage = __import__("android.storage", fromlist=["primary_external_storage_path"])
+                primary_external_storage_path = getattr(android_storage, "primary_external_storage_path")
+                carpeta = os.path.join(primary_external_storage_path(), "Download")
+                os.makedirs(carpeta, exist_ok=True)
+                return carpeta
+            except Exception:
+                pass
         carpeta = os.path.join(os.path.expanduser("~"), "Downloads")
         if not os.path.isdir(carpeta):
             carpeta = os.path.expanduser("~")
@@ -1281,6 +1291,10 @@ class PresupuestoApp(MDApp):
     def abrir_pdf(self, ruta_pdf):
         """Abre archivo con la aplicación predeterminada del sistema."""
         try:
+            if kivy_platform == "android":
+                # En Android evitamos apertura forzada para no romper en dispositivos sin visor asociado.
+                self.mostrar_mensaje(f"Archivo generado en: {ruta_pdf}")
+                return
             if os.name == "nt":
                 os.startfile(ruta_pdf)
             elif sys.platform == "darwin":

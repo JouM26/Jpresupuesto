@@ -206,6 +206,10 @@ tempCodeRunnerFile.py
 # Local app data
 presupuestos.db
 
+# Android build artifacts
+.buildozer/
+bin/
+
 # Ruff stuff:
 .ruff_cache/
 
