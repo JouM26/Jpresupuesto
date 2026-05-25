@@ -23,13 +23,19 @@ jobs:
             -v "$PWD":/home/user/hostcwd \
             -w /home/user/hostcwd \
             kivy/buildozer:latest \
-            buildozer -v android debug
+            -v android debug
+
+      - name: Validate APK output
+        run: |
+          ls -la bin || true
+          test -n "$(ls -1 bin/*.apk 2>/dev/null)"
 
       - name: Upload APK artifact
         uses: actions/upload-artifact@v4
         with:
           name: JPresupuesto-android-apk
           path: bin/*.apk
+          if-no-files-found: error
 
       - name: Upload release asset
         if: github.event_name == 'release'
