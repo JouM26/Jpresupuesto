@@ -12,6 +12,9 @@ jobs:
   build-android:
     runs-on: ubuntu-latest
     timeout-minutes: 90
+    defaults:
+      run:
+        shell: bash
 
     steps:
       - name: Checkout
@@ -19,8 +22,12 @@ jobs:
 
       - name: Build APK with Buildozer (Docker)
         run: |
+          echo "Workspace: $GITHUB_WORKSPACE"
+          ls -la "$GITHUB_WORKSPACE"
+          test -f "$GITHUB_WORKSPACE/buildozer.spec"
+
           docker run --rm \
-            -v "$PWD":/home/user/hostcwd \
+            -v "$GITHUB_WORKSPACE":/home/user/hostcwd \
             -w /home/user/hostcwd \
             kivy/buildozer:latest \
             -v android debug

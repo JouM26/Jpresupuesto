@@ -43,9 +43,10 @@ Este repositorio tambien incluye build automatico Android:
 ### Como generar el APK
 
 1. Haz push a `main` o ejecuta manualmente el workflow `Build Android APK` en `Actions`.
-2. Al finalizar, descarga el artefacto:
+2. Verifica que `buildozer.spec` este en la raiz del repositorio y subido a GitHub.
+3. Al finalizar, descarga el artefacto:
 - `JPresupuesto-android-apk`
-3. Ese artefacto contiene el archivo `.apk` para instalar en Android.
+4. Ese artefacto contiene el archivo `.apk` para instalar en Android.
 
 ### Notas Android
 
