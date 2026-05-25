@@ -13,6 +13,8 @@ Dependencias de build:
 - `requirements.txt`
 - `requirements-build.txt`
 
+Nota de estabilidad CI: `requirements-build.txt` fija `pyinstaller-hooks-contrib` para evitar regresiones recientes en builds de Kivy/ReportLab.
+
 ### Como ejecutar el build
 
 1. Sube estos cambios a GitHub en la rama `main`.

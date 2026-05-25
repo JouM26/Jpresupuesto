@@ -18,6 +18,7 @@ jobs:
       KIVY_GL_BACKEND: "mock"
       KIVY_AUDIO: "mock"
       KIVY_NO_CONSOLELOG: "1"
+      PYI_LOG_LEVEL: "INFO"
     defaults:
       run:
         shell: pwsh
@@ -49,10 +50,12 @@ jobs:
 
       - name: Build executable (PyInstaller)
         run: |
-          python -m PyInstaller --noconfirm --clean --windowed --name JPresupuesto --hidden-import kivy_deps.angle --hidden-import kivy_deps.glew --hidden-import kivy_deps.sdl2 --hidden-import kivymd --exclude-module kivy.tests app.py *>&1 | Tee-Object -FilePath pyinstaller.log
-          if ($LASTEXITCODE -ne 0) {
+          python -m PyInstaller --noconfirm --clean --windowed --log-level INFO --name JPresupuesto --hidden-import kivy_deps.angle --hidden-import kivy_deps.glew --hidden-import kivy_deps.sdl2 --hidden-import kivymd --exclude-module kivy.tests app.py > pyinstaller.log 2>&1
+          $exitCode = $LASTEXITCODE
+          if ($exitCode -ne 0) {
             Write-Error "PyInstaller fallo. Revisa pyinstaller.log en artifacts."
-            exit $LASTEXITCODE
+            Get-Content pyinstaller.log -Tail 200
+            exit $exitCode
           }
 
       - name: Validate build output
