@@ -15,6 +15,8 @@ Dependencias de build:
 
 Nota de estabilidad CI: requirements-build.txt fija pyinstaller-hooks-contrib en una versión alineada con PyInstaller para evitar errores de hooks en builds de Kivy/ReportLab.
 
+Adicionalmente, el workflow usa un hook local en .github/pyinstaller_hooks/hook-kivy.py para evitar fallos del hook oficial de Kivy en runners de GitHub Actions.
+
 ### Como ejecutar el build
 
 1. Sube estos cambios a GitHub en la rama `main`.

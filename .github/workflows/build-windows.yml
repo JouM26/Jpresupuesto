@@ -57,7 +57,7 @@ jobs:
 
       - name: Build executable (PyInstaller)
         run: |
-          python -m PyInstaller --noconfirm --clean --windowed --log-level INFO --name JPresupuesto --hidden-import kivy_deps.angle --hidden-import kivy_deps.glew --hidden-import kivy_deps.sdl2 --exclude-module kivy.tests app.py > pyinstaller.log 2>&1
+          python -m PyInstaller --noconfirm --clean --windowed --log-level INFO --additional-hooks-dir .github/pyinstaller_hooks --name JPresupuesto --hidden-import kivy_deps.angle --hidden-import kivy_deps.glew --hidden-import kivy_deps.sdl2 --exclude-module kivy.tests app.py > pyinstaller.log 2>&1
           $exitCode = $LASTEXITCODE
           if ($exitCode -ne 0) {
             Write-Host "PyInstaller fallo. Ultimas lineas de pyinstaller.log:"
