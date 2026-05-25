@@ -53,6 +53,7 @@ jobs:
           pip show kivy
           pip show kivymd
           pip show reportlab
+          pip show pyinstaller-hooks-contrib
 
       - name: Build executable (PyInstaller)
         run: |
