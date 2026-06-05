@@ -36,7 +36,7 @@ jobs:
             -w /home/user/hostcwd \
             --entrypoint /bin/bash \
             kivy/buildozer:latest \
-            -c "yes | sdkmanager --licenses > /dev/null 2>&1 || true; buildozer -v android debug"
+            -c "yes | sdkmanager --licenses > /dev/null 2>&1 || true; echo y | buildozer -v android debug"
 
       - name: Validate APK output
         run: |
