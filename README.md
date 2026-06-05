@@ -53,7 +53,7 @@ Este repositorio tambien incluye build automatico Android:
 ### Notas Android
 
 - El primer build Android puede tardar bastante (descarga SDK/NDK dentro del contenedor).
-- En Android, al generar PDF la app informa la ruta del archivo en lugar de abrirlo automaticamente.
+- En Android, los PDFs se guardan dentro del almacenamiento de la app y se informa la ruta generada en lugar de abrirlos automaticamente.
 
 ### Si falla el workflow
 

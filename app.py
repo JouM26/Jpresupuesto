@@ -10,7 +10,6 @@ from datetime import datetime, timedelta
 from kivy.lang import Builder
 from kivy.core.window import Window
 from kivy.utils import platform as kivy_platform
-from kivy.uix.filechooser import FileChooserListView
 from kivy.uix.boxlayout import BoxLayout as KivyBoxLayout
 from kivy.uix.button import Button
 from kivy.uix.popup import Popup
@@ -317,14 +316,7 @@ MDBoxLayout:
                         id: config_logo_path_input
                         hint_text: "Logo Empresa (ruta de imagen)"
                         mode: "rectangle"
-                        readonly: True
                         line_color_focus: app.color_primary
-
-                    MDRaisedButton:
-                        text: "Seleccionar Logo"
-                        md_bg_color: app.color_secondary
-                        text_color: app.color_primary
-                        on_release: app.seleccionar_logo_empresa()
 
                     MDBoxLayout:
                         size_hint_y: None
@@ -474,45 +466,6 @@ class PresupuestoApp(MDApp):
         self.root.ids.config_empresa_celular_input.text = self.empresa_celular
         self.root.ids.config_empresa_direccion_input.text = self.empresa_direccion
         self.root.ids.config_logo_path_input.text = self.empresa_logo_path
-
-    def seleccionar_logo_empresa(self):
-        """Abre selector de archivo para elegir el logo de la empresa."""
-        layout = KivyBoxLayout(orientation='vertical', spacing=8, padding=10)
-        chooser = FileChooserListView(
-            path=os.path.expanduser("~"),
-            filters=["*.png", "*.jpg", "*.jpeg", "*.webp"],
-            multiselect=False,
-        )
-        layout.add_widget(chooser)
-
-        botones = KivyBoxLayout(orientation='horizontal', spacing=8, size_hint_y=None, height=42)
-        btn_cancelar = Button(text='Cancelar')
-        btn_aceptar = Button(text='Seleccionar')
-        botones.add_widget(btn_cancelar)
-        botones.add_widget(btn_aceptar)
-        layout.add_widget(botones)
-
-        popup = Popup(
-            title='Seleccionar Logo de Empresa',
-            content=layout,
-            size_hint=(0.92, 0.9),
-            auto_dismiss=False,
-        )
-
-        def cancelar(_instance):
-            popup.dismiss()
-
-        def aceptar(_instance):
-            if not chooser.selection:
-                self.mostrar_mensaje("Selecciona un archivo de imagen")
-                return
-            ruta = chooser.selection[0]
-            self.root.ids.config_logo_path_input.text = ruta
-            popup.dismiss()
-
-        btn_cancelar.bind(on_release=cancelar)
-        btn_aceptar.bind(on_release=aceptar)
-        popup.open()
 
     def guardar_configuracion_empresa(self):
         """Guarda datos de empresa para usar en todas las cotizaciones."""
@@ -1269,14 +1222,9 @@ class PresupuestoApp(MDApp):
     def obtener_carpeta_descargas(self):
         """Devuelve la ruta de la carpeta Descargas del usuario."""
         if kivy_platform == "android":
-            try:
-                android_storage = __import__("android.storage", fromlist=["primary_external_storage_path"])
-                primary_external_storage_path = getattr(android_storage, "primary_external_storage_path")
-                carpeta = os.path.join(primary_external_storage_path(), "Download")
-                os.makedirs(carpeta, exist_ok=True)
-                return carpeta
-            except Exception:
-                pass
+            carpeta = os.path.join(self.user_data_dir, "pdfs")
+            os.makedirs(carpeta, exist_ok=True)
+            return carpeta
         carpeta = os.path.join(os.path.expanduser("~"), "Downloads")
         if not os.path.isdir(carpeta):
             carpeta = os.path.expanduser("~")
