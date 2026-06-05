@@ -34,8 +34,9 @@ jobs:
           docker run --rm \
             -v "$GITHUB_WORKSPACE":/home/user/hostcwd \
             -w /home/user/hostcwd \
+            --entrypoint /bin/bash \
             kivy/buildozer:latest \
-            -v android debug
+            -c "yes | sdkmanager --licenses > /dev/null 2>&1 || true; buildozer -v android debug"
 
       - name: Validate APK output
         run: |
